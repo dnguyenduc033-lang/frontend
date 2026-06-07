@@ -399,6 +399,13 @@ export default class ApiService {
         return response.data;
     }
 
+    static async bulkApprovePurchaseRequests(ids) {
+        const response = await axios.put(`${this.BASE_URL}/purchase-requests/bulk-approve`, { ids }, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
     static async rejectPurchaseRequest(id, reason) {
         const response = await axios.put(`${this.BASE_URL}/purchase-requests/${id}/reject`, { reason }, {
             headers: this.getHeader()

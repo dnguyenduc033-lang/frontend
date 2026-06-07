@@ -14,7 +14,8 @@ const ProductPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");      
   const [selectedSupplier, setSelectedSupplier] = useState(""); 
-  const [selectedPriceRange, setSelectedPriceRange] = useState(""); 
+  const [selectedPriceRange, setSelectedPriceRange] = useState("");
+  const [selectedSort, setSelectedSort] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]); 
 
   const [message, setMessage] = useState("");
@@ -31,8 +32,16 @@ const ProductPage = () => {
     { value: "5m_to_10m", label: "5.000.000đ - 10.000.000đ" },
     { value: "10m_to_20m", label: "10.000.000đ - 20.000.000đ" },
     { value: "over_20m", label: "Trên 20.000.000đ" },
-    { value: "sort_asc", label: "Thấp đến cao" },
-    { value: "sort_desc", label: "Cao xuống thấp" }
+  ];
+
+  const sortOptions = [
+    { value: "", label: "-- Sắp xếp mặc định --" },
+    { value: "price_asc", label: "Giá thấp đến cao" },
+    { value: "price_desc", label: "Giá cao đến thấp" },
+    { value: "name_asc", label: "Tên A → Z" },
+    { value: "name_desc", label: "Tên Z → A" },
+    { value: "stock_asc", label: "Tồn kho thấp đến cao" },
+    { value: "stock_desc", label: "Tồn kho cao đến thấp" },
   ];
 
   useEffect(() => {
@@ -104,32 +113,37 @@ const ProductPage = () => {
     }
 
     if (selectedPriceRange && selectedPriceRange !== "") {
-      if (!selectedPriceRange.startsWith("sort")) {
-        // Xử lý Lọc giá
-        result = result.filter(p => {
-          const price = p.price || 0;
-          switch (selectedPriceRange) {
-            case "1m_to_5m": return price >= 1000000 && price <= 5000000;
-            case "5m_to_10m": return price > 5000000 && price <= 10000000;
-            case "10m_to_20m": return price > 10000000 && price <= 20000000;
-            case "over_20m": return price > 20000000;
-            default: return true;
-          }
-        });
-      } else {
-        // Xử lý Sắp xếp giá
-        if (selectedPriceRange === "sort_asc") {
-          result.sort((a, b) => (a.price || 0) - (b.price || 0));
-        } else if (selectedPriceRange === "sort_desc") {
-          result.sort((a, b) => (b.price || 0) - (a.price || 0));
+      result = result.filter(p => {
+        const price = p.price || 0;
+        switch (selectedPriceRange) {
+          case "1m_to_5m": return price >= 1000000 && price <= 5000000;
+          case "5m_to_10m": return price > 5000000 && price <= 10000000;
+          case "10m_to_20m": return price > 10000000 && price <= 20000000;
+          case "over_20m": return price > 20000000;
+          default: return true;
         }
-      }
+      });
+    }
+
+    if (selectedSort === "price_asc") {
+      result.sort((a, b) => (a.price || 0) - (b.price || 0));
+    } else if (selectedSort === "price_desc") {
+      result.sort((a, b) => (b.price || 0) - (a.price || 0));
+    } else if (selectedSort === "name_asc") {
+      result.sort((a, b) => (a.name || "").localeCompare(b.name || "", "vi"));
+    } else if (selectedSort === "name_desc") {
+      result.sort((a, b) => (b.name || "").localeCompare(a.name || "", "vi"));
+    } else if (selectedSort === "stock_asc") {
+      result.sort((a, b) => (a.stockQuantity || 0) - (b.stockQuantity || 0));
+    } else if (selectedSort === "stock_desc") {
+      result.sort((a, b) => (b.stockQuantity || 0) - (a.stockQuantity || 0));
+    } else {
+      result.sort((a, b) => (b.id || 0) - (a.id || 0));
     }
 
     setFilteredProducts(result);
-    setCurrentPage(1); 
-  // Đã xóa biến selectedSort ra khỏi mảng phụ thuộc này
-  }, [searchTerm, selectedCategory, selectedBrand, selectedSupplier, selectedPriceRange, allProducts]);
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, selectedBrand, selectedSupplier, selectedPriceRange, selectedSort, allProducts]);
   const handleDeleteProduct = async (productId) => {
     if (window.confirm("Bạn có chắc chắn muốn gỡ bỏ hoàn toàn thiết bị này?")) {
       try {
@@ -213,7 +227,7 @@ const ProductPage = () => {
           </div>
 
           {/* Hàng 2: Dropdowns bộ lọc thông minh */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             
             {/* 1. Lọc Danh mục */}
             <div className="relative">
@@ -269,6 +283,19 @@ const ProductPage = () => {
                 <option value="">-- Tất cả mức giá --</option>
                 {priceOptions.map(option => (
                   <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs">▼</span>
+            </div>
+
+            <div className="relative">
+              <select
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-[#00a884] text-sm text-slate-600 font-bold transition-all cursor-pointer appearance-none pr-10"
+                value={selectedSort}
+                onChange={(e) => setSelectedSort(e.target.value)}
+              >
+                {sortOptions.map(option => (
+                  <option key={option.value || "default"} value={option.value}>{option.label}</option>
                 ))}
               </select>
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs">▼</span>
