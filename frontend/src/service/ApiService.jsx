@@ -1,11 +1,23 @@
 import axios from "axios";
 import CryptoJS from "crypto-js";
 
+// --- BỔ SUNG: BỘ ĐÁNH CHẶN LỖI (INTERCEPTOR) ---
+axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        // Nếu server báo lỗi 401 (Hết hạn Token) hoặc 403 (Không có quyền)
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+            ApiService.clearAuth(); // Xóa token cũ
+            window.location.href = "/login"; // Đá về trang đăng nhập
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default class ApiService {
 
     static BASE_URL = "http://localhost:5050/api";
-    static ENCRYPTION_KEY = "phegon-dev-inventory";
-
+    static ENCRYPTION_KEY = "nguyendai-dev-inventory";
 
     //encrypt data using cryptoJs
     static encrypt(data) {
@@ -20,8 +32,8 @@ export default class ApiService {
 
     //save token with encryption
     static saveToken(token) {
-        const encryptedToken = this.encrypt(token);
-        localStorage.setItem("token", encryptedToken)
+        const encryptedToken = this.encrypt(token).toString();
+        localStorage.setItem("token", encryptedToken);
     }
 
     // retreive the token
@@ -33,8 +45,8 @@ export default class ApiService {
 
     //save Role with encryption
     static saveRole(role) {
-        const encryptedRole = this.encrypt(role);
-        localStorage.setItem("role", encryptedRole)
+        const encryptedRole = this.encrypt(String(role)).toString();
+        localStorage.setItem("role", encryptedRole);
     }
 
     // retreive the role
@@ -49,28 +61,25 @@ export default class ApiService {
         localStorage.removeItem("role");
     }
 
-
     static getHeader() {
         const token = this.getToken();
         return {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json"
-        }
+        };
     }
 
-    /**  AUTH && USERS API */
+    /** AUTH && USERS API */
 
     static async registerUser(registerData) {
-        const response = await axios.post(`${this.BASE_URL}/auth/register`, registerData)
+        const response = await axios.post(`${this.BASE_URL}/auth/register`, registerData);
         return response.data;
     }
-
 
     static async loginUser(loginData) {
-        const response = await axios.post(`${this.BASE_URL}/auth/login`, loginData)
+        const response = await axios.post(`${this.BASE_URL}/auth/login`, loginData);
         return response.data;
     }
-
 
     static async getAllUsers() {
         const response = await axios.get(`${this.BASE_URL}/users/all`, {
@@ -79,8 +88,7 @@ export default class ApiService {
         return response.data;
     }
 
-
-    static async getLoggedInUsesInfo() {
+    static async getLoggedInUserInfo() {
         const response = await axios.get(`${this.BASE_URL}/users/current`, {
             headers: this.getHeader()
         });
@@ -102,19 +110,20 @@ export default class ApiService {
     }
 
     static async deleteUser(userId) {
-        const response = await axios.delete(`${this.BASE_URL}/users/update/${userId}`, {
+        const response = await axios.delete(`${this.BASE_URL}/users/delete/${userId}`, {
             headers: this.getHeader()
         });
         return response.data;
     }
 
+    /** PRODUCT ENDPOINTS */
 
-
-
-    /**PRODUCT ENDPOINTS */
-
-    static async addProduct(formData) {
-
+    static async addProduct(imageFile, productDTO) {
+        const formData = new FormData();
+        formData.append("product", new Blob([JSON.stringify(productDTO)], { type: "application/json" }));
+        if (imageFile) {
+            formData.append("imageFile", imageFile);
+        }
         const response = await axios.post(`${this.BASE_URL}/products/add`, formData, {
             headers: {
                 ...this.getHeader(),
@@ -124,8 +133,12 @@ export default class ApiService {
         return response.data;
     }
 
-    static async updateProduct(formData) {
-
+    static async updateProduct(imageFile, productDTO) {
+        const formData = new FormData();
+        formData.append("product", new Blob([JSON.stringify(productDTO)], { type: "application/json" }));
+        if (imageFile) {
+            formData.append("imageFile", imageFile); 
+        }
         const response = await axios.put(`${this.BASE_URL}/products/update`, formData, {
             headers: {
                 ...this.getHeader(),
@@ -151,8 +164,8 @@ export default class ApiService {
 
     static async searchProduct(searchValue) {
         const response = await axios.get(`${this.BASE_URL}/products/search`, {
-            params: { searchValue },
-            headers: this.getHeader()
+            headers: this.getHeader(),
+            params: { input: searchValue }
         });
         return response.data;
     }
@@ -164,162 +177,259 @@ export default class ApiService {
         return response.data;
     }
 
+    /** CATEGORY ENDPOINTS */
 
-
-    /**CATEGOTY EDNPOINTS */
     static async createCategory(category) {
         const response = await axios.post(`${this.BASE_URL}/categories/add`, category, {
             headers: this.getHeader()
-        })
+        });
         return response.data;
     }
 
     static async getAllCategory() {
         const response = await axios.get(`${this.BASE_URL}/categories/all`, {
             headers: this.getHeader()
-        })
+        });
         return response.data;
     }
 
     static async getCategoryById(categoryId) {
         const response = await axios.get(`${this.BASE_URL}/categories/${categoryId}`, {
             headers: this.getHeader()
-        })
+        });
         return response.data;
     }
 
     static async updateCategory(categoryId, categoryData) {
         const response = await axios.put(`${this.BASE_URL}/categories/update/${categoryId}`, categoryData, {
             headers: this.getHeader()
-        })
+        });
         return response.data;
     }
 
     static async deleteCategory(categoryId) {
         const response = await axios.delete(`${this.BASE_URL}/categories/delete/${categoryId}`, {
             headers: this.getHeader()
-        })
+        });
         return response.data;
     }
 
+    /** SUPPLIER ENDPOINTS */
 
-    /**Supplier EDNPOINTS */
     static async addSupplier(supplierData) {
         const response = await axios.post(`${this.BASE_URL}/suppliers/add`, supplierData, {
             headers: this.getHeader()
-        })
+        });
         return response.data;
     }
 
     static async getAllSuppliers() {
         const response = await axios.get(`${this.BASE_URL}/suppliers/all`, {
             headers: this.getHeader()
-        })
+        });
         return response.data;
     }
-
 
     static async getSupplierById(supplierId) {
         const response = await axios.get(`${this.BASE_URL}/suppliers/${supplierId}`, {
             headers: this.getHeader()
-        })
+        });
         return response.data;
     }
 
     static async updateSupplier(supplierId, supplierData) {
         const response = await axios.put(`${this.BASE_URL}/suppliers/update/${supplierId}`, supplierData, {
             headers: this.getHeader()
-        })
+        });
         return response.data;
     }
 
     static async deleteSupplier(supplierId) {
         const response = await axios.delete(`${this.BASE_URL}/suppliers/delete/${supplierId}`, {
             headers: this.getHeader()
-        })
+        });
         return response.data;
     }
 
+    /** TRANSACTIONS ENDPOINTS */
 
-
-
-
-
-
-    /**Transactions EDNPOINTS */
     static async purchaseProduct(body) {
         const response = await axios.post(`${this.BASE_URL}/transactions/purchase`, body, {
             headers: this.getHeader()
-        })
+        });
         return response.data;
     }
 
     static async sellProduct(body) {
         const response = await axios.post(`${this.BASE_URL}/transactions/sell`, body, {
             headers: this.getHeader()
-        })
+        });
         return response.data;
     }
     
-
     static async returnToSupplier(body) {
         const response = await axios.post(`${this.BASE_URL}/transactions/return`, body, {
             headers: this.getHeader()
-        })
+        });
         return response.data;
     }
 
-    static async getAllTransactions(filter) {
+    static async returnFromCustomer(body) {
+        const response = await axios.post(`${this.BASE_URL}/transactions/return-from-customer`, body, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    static async getAllTransactions(page = 0, size = 10, filter = "") {
         const response = await axios.get(`${this.BASE_URL}/transactions/all`, {
             headers: this.getHeader(),
-            params: {filter}
-        })
+            params: { page, size, filter }
+        });
         return response.data;
     }
 
-    static async geTransactionsByMonthAndYear(month, year) {
+    static async getTransactionsByMonthAndYear(month, year) {
         const response = await axios.get(`${this.BASE_URL}/transactions/by-month-year`, {
             headers: this.getHeader(),
-            params: {
-                month:month,
-                year:year
-
-            }
-        })
+            params: { month, year }
+        });
         return response.data;
     }
 
     static async getTransactionById(transactionId) {
-        const response = await axios.get(`${this.BASE_URL}/transactions/${transactionId}`, {
+        // Ép đường dẫn tuyệt đối chạy qua cổng 5050 của Spring Boot Backend
+        const response = await axios.get(`http://localhost:5050/api/transactions/${transactionId}`, {
             headers: this.getHeader()
-        })
+        });
         return response.data;
     }
 
     static async updateTransactionStatus(transactionId, status) {
         const response = await axios.put(`${this.BASE_URL}/transactions/${transactionId}`, status, {
             headers: this.getHeader()
-        })
+        });
         return response.data;
     }
 
-
-    /**AUTHENTICATION CHECKER */
-    static logout(){
-        this.clearAuth()
+    static async updateTransactionStatusOnly(id, status) {
+        const response = await axios.patch(`${this.BASE_URL}/transactions/${id}/status?status=${status}`, null, {
+            headers: this.getHeader()
+        });
+        return response.data;
     }
 
-    static isAuthenticated(){
+    /** AUTHENTICATION CHECKER */
+
+    static logout() {
+        this.clearAuth();
+    }
+
+    static isAuthenticated() {
         const token = this.getToken();
         return !!token;
     }
 
-    static isAdmin(){
+    static isAdmin() {
         const role = this.getRole();
         return role === "ADMIN";
     }
 
+    static isManager() {
+        const role = this.getRole();
+        return role === "MANAGER";
+    }
+
+    static isStaff() {
+    const role = this.getRole();
+    return role === "STAFF";
+    }
+
+    static isAdminOrManager() {
+        const role = this.getRole();
+        return role === "ADMIN" || role === "MANAGER";
+    }
+
+    static isAdminOrManagerOrStaff() {
+        const role = this.getRole();
+        return role === "ADMIN" || role === "MANAGER" || role === "STAFF";
+    }
+
+    /** PURCHASE REQUEST ENDPOINTS */
+
+    static async createPurchaseRequest(data) {
+        const response = await axios.post(`${this.BASE_URL}/purchase-requests/create`, data, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    static async getAllPurchaseRequests() {
+        const response = await axios.get(`${this.BASE_URL}/purchase-requests/all`, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    static async getMyPurchaseRequests() {
+        const response = await axios.get(`${this.BASE_URL}/purchase-requests/my`, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    static async approvePurchaseRequest(id) {
+        const response = await axios.put(`${this.BASE_URL}/purchase-requests/${id}/approve`, {}, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    static async rejectPurchaseRequest(id, reason) {
+        const response = await axios.put(`${this.BASE_URL}/purchase-requests/${id}/reject`, { reason }, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    static async completePurchaseRequest(id, serialNumbers) {
+        const response = await axios.put(`${this.BASE_URL}/purchase-requests/${id}/complete`, serialNumbers, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    /** NOTIFICATION ENDPOINTS */
+    
+    static async getMyNotifications() {
+        const response = await axios.get(`${this.BASE_URL}/notifications/my`, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    static async getUnreadCount() {
+        const response = await axios.get(`${this.BASE_URL}/notifications/unread-count`, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    static async markNotificationAsRead(id) {
+        const response = await axios.put(`${this.BASE_URL}/notifications/${id}/read`, {}, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    static async markAllNotificationsAsRead() {
+        const response = await axios.put(`${this.BASE_URL}/notifications/read-all`, {}, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
     /** NEWS ENDPOINTS */
+
     static async getAllNews() {
         const response = await axios.get(`${this.BASE_URL}/news`, {
             headers: this.getHeader()
@@ -334,8 +444,8 @@ export default class ApiService {
         return response.data;
     }
 
-    /** TRANSACTION EXTENSIONS */
-    // Tra cứu bảo hành qua Serial Number
+    /** EXTENSIONS & UTILS */
+
     static async checkWarranty(serialNumber) {
         const response = await axios.get(`${this.BASE_URL}/transactions/warranty-check/${serialNumber}`, {
             headers: this.getHeader()
@@ -343,17 +453,6 @@ export default class ApiService {
         return response.data;
     }
 
-    // Cập nhật trạng thái (Hủy/Trả hàng) dùng PATCH
-    static async updateStatusOnly(transactionId, status) {
-        const response = await axios.patch(`${this.BASE_URL}/transactions/${transactionId}/status`, null, {
-            params: { status },
-            headers: this.getHeader()
-        });
-        return response.data;
-    }
-
-    /** PRODUCT EXTENSIONS */
-    // Lấy danh sách sản phẩm sắp hết hàng
     static async getLowStockProducts() {
         const response = await axios.get(`${this.BASE_URL}/products/low-stock`, {
             headers: this.getHeader()
@@ -361,10 +460,21 @@ export default class ApiService {
         return response.data;
     }
 
-    // Thêm thông số kỹ thuật (Specification) cho sản phẩm
     static async addProductSpecification(productId, specData) {
         const response = await axios.post(`${this.BASE_URL}/products/${productId}/specs`, specData, {
             headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    static async extractSerialsFromExcel(file) {
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await axios.post(`${this.BASE_URL}/transactions/extract-serials`, formData, {
+            headers: {
+                ...this.getHeader(),
+                "Content-Type": "multipart/form-data"
+            }
         });
         return response.data;
     }
