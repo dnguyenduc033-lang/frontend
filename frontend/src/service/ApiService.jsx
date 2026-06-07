@@ -88,6 +88,20 @@ export default class ApiService {
         return response.data;
     }
 
+    static async getUserOrgTree() {
+        const response = await axios.get(`${this.BASE_URL}/users/org-tree`, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    static async getUserChildren(userId) {
+        const response = await axios.get(`${this.BASE_URL}/users/${userId}/children`, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
     static async getLoggedInUserInfo() {
         const response = await axios.get(`${this.BASE_URL}/users/current`, {
             headers: this.getHeader()
@@ -380,6 +394,13 @@ export default class ApiService {
 
     static async approvePurchaseRequest(id) {
         const response = await axios.put(`${this.BASE_URL}/purchase-requests/${id}/approve`, {}, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    static async bulkApprovePurchaseRequests(ids) {
+        const response = await axios.put(`${this.BASE_URL}/purchase-requests/bulk-approve`, { ids }, {
             headers: this.getHeader()
         });
         return response.data;

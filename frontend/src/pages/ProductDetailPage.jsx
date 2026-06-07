@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Layout from "../component/Layout";
 import ApiService from "../service/ApiService";
 import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import * as XLSX from "xlsx";
 
 const ProductDetailPage = () => {
@@ -84,9 +85,9 @@ const ProductDetailPage = () => {
           )}
           <button 
             className="mt-6 px-6 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl font-bold text-sm transition-colors cursor-pointer"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/product")}
           >
-            Quay lại
+            Quay lại danh sách
           </button>
         </div>
       </Layout>
@@ -96,7 +97,15 @@ const ProductDetailPage = () => {
   return (
     <Layout>
       <div className="w-full font-['Poppins'] pb-10">
-        
+        <button
+          type="button"
+          onClick={() => navigate("/product")}
+          className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[#00a884] mb-6 transition-colors cursor-pointer group"
+        >
+          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+          Quay lại danh sách
+        </button>
+
         <div className="flex items-center gap-4 mb-8">
           
           {/* Icon Thẻ Thông Số */}

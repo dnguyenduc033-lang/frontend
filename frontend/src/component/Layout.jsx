@@ -36,7 +36,7 @@ const Layout = ({ children }) => {
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
       
       {/* VÙNG NỘI DUNG CHÍNH */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${isSidebarOpen ? 'md:ml-[270px]' : 'ml-0'}`}>
+      <div id="app-main-content" className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${isSidebarOpen ? 'md:ml-[270px]' : 'ml-0'}`}>
         
         {/* HEADER DÀNH RIÊNG CHO MOBILE */}
         <div className="md:hidden flex items-center justify-between bg-white px-5 py-4 shadow-sm z-30 sticky top-0">
