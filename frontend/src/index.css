@@ -1,2 +1,10 @@
 @import "tailwindcss";
 
+body.user-modal-open #app-sidebar,
+body.user-modal-open #app-main-content {
+  filter: blur(4px);
+  transition: filter 0.2s ease;
+  pointer-events: none;
+  user-select: none;
+}
+

@@ -74,6 +74,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
   return (
     <div
+      id="app-sidebar"
       className={`fixed top-0 left-0 w-[270px] h-screen bg-[#111827] text-white flex flex-col shadow-2xl transition-transform duration-300 ease-in-out z-50 ${
         isOpen ? "translate-x-0" : "-translate-x-full"
       }`}
