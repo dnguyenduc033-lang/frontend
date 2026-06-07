@@ -99,35 +99,31 @@ const DashboardPage = () => {
       chartMap[key].count += 1;
       chartMap[key].quantity += t.totalProducts || 0;
 
+      // SAU
       const price = t.totalPrice || 0;
       const profitVal = t.profit || 0;
-      const quantity = t.totalProducts || 0;
-
-      // Vốn = Doanh thu - Lợi nhuận
-      const capitalVal = (t.purchasePrice || 0) * (t.totalProducts || 1);
 
       if (t.transactionType === 'SALE') {
           totalRev  += price;
           totalProf += profitVal;
-          totalCap  += capitalVal;
-          
+
           chartMap[key].amount  += price;
           chartMap[key].profit  += profitVal;
-          chartMap[key].capital += capitalVal;
-          
+
       } else if (t.transactionType === 'CUSTOMER_RETURN') {
-          const returnCapital = (t.purchasePrice || 0) * (t.totalProducts || 1);
           totalRev  -= Math.abs(price);
           totalProf -= Math.abs(profitVal);
-          totalCap  -= returnCapital;
 
           chartMap[key].amount  -= Math.abs(price);
           chartMap[key].profit  -= Math.abs(profitVal);
-          chartMap[key].capital -= returnCapital;
+
+      } else if (t.transactionType === 'PURCHASE') {
+          totalCap  += price;
+          chartMap[key].capital += price;
 
       } else if (t.transactionType === 'RETURN_TO_SUPPLIER') {
-          totalCap  -= capitalVal;
-          chartMap[key].capital -= capitalVal;
+          totalCap  -= price;
+          chartMap[key].capital -= price;
       }
       // Bỏ qua transactionType === 'PURCHASE' khi tính vốn theo công thức mới
     });
@@ -141,7 +137,7 @@ const DashboardPage = () => {
     if (selectedData === "quantity") return "Tổng số lượng sản phẩm";
     if (selectedData === "amount") return "Doanh thu bán ra";
     if (selectedData === "profit") return "Lợi nhuận ròng";
-    if (selectedData === "capital") return "Vốn hàng đã bán";
+    if (selectedData === "capital") return "Tổng vốn đã chi";
     return "";
   };
 

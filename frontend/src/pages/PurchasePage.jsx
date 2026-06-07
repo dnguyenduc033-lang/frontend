@@ -118,7 +118,7 @@ const PurchasePage = () => {
       description: description,
       note,
       serialNumbers: serialNumbers,
-      purchaseType: "NEW_IMPORT"
+      
     };
 
     try {

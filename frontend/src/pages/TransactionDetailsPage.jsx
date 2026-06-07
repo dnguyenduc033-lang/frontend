@@ -10,7 +10,8 @@ import {
   CheckCircle2, 
   Clock, 
   XCircle,
-  Calendar
+  Calendar,
+  Hash 
 } from "lucide-react";
 
 const TransactionDetailsPage = () => {
@@ -188,6 +189,35 @@ const TransactionDetailsPage = () => {
               </div>
 
             </div>
+            
+            {/* KHỐI 2: DANH SÁCH SERIAL */}
+            {transaction.productItems && transaction.productItems.length > 0 ? (
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h2 className="text-lg font-extrabold text-slate-800 flex items-center gap-2.5 border-b border-slate-100 pb-4 mb-5">
+                  <span className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center text-violet-500">
+                    <Hash size={18} />
+                  </span>
+                  Danh Sách Mã Serial / IMEI Giao Dịch
+                  <span className="ml-auto text-xs font-bold bg-violet-50 text-violet-600 px-2.5 py-1 rounded-lg border border-violet-100">
+                    {transaction.productItems.length} chiếc
+                  </span>
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {transaction.productItems.map((item, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold font-mono border bg-slate-50 text-slate-600 border-slate-200"
+                    >
+                      {item.serialNumber}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 text-center py-8 text-slate-400">
+                <p className="text-sm font-medium">Không tìm thấy mã sê-ri riêng lẻ đính kèm cho giao dịch này.</p>
+              </div>
+            )}
 
             {/* CỘT PHẢI: NGƯỜI THỰC HIỆN & THÔNG TIN SẢN PHẨM */}
             <div className="space-y-6">
