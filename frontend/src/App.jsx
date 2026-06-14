@@ -1,6 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { ProtectedRoute, AdminRoute, AdminManagerRoute, ManagerRoute } from "./service/Guard";
+import { ProtectedRoute, AdminRoute, AdminManagerRoute, ManagerRoute, ManagerOrStaffRoute, AllRolesRoute } from "./service/Guard";
 import WelcomePage from "./pages/WelcomePage";
 
 import RegisterPage from "./pages/RegisterPage";
@@ -45,13 +45,13 @@ function App() {
         <Route path="/supplier-detail/:id" element={<AdminManagerRoute element={<SupplierDetailPage/>}/>}/>
         <Route path="/add-supplier" element={<AdminManagerRoute element={<AddEditSupplierPage/>}/>}/>
         <Route path="/edit-supplier/:supplierId" element={<AdminManagerRoute element={<AddEditSupplierPage/>}/>}/>
-        <Route path="/product" element={<AdminManagerRoute element={<ProductPage/>}/>}/>
+        <Route path="/product" element={<AllRolesRoute element={<ProductPage/>}/>}/>
         <Route path="/add-product" element={<AdminManagerRoute element={<AddEditProductPage/>}/>}/>
         <Route path="/edit-product/:productId" element={<AdminManagerRoute element={<AddEditProductPage/>}/>}/>
-        <Route path="/product-detail/:productId" element={<AdminManagerRoute element={<ProductDetailPage/>}/>}/>
+        <Route path="/product-detail/:productId" element={<AllRolesRoute element={<ProductDetailPage/>}/>}/>
         <Route path="/purchase" element={<ManagerRoute element={<PurchasePage/>}/>}/>
-        <Route path="/sell" element={<ManagerRoute element={<SellPage/>}/>}/>
-        <Route path="/return" element={<AdminManagerRoute element={<ReturnPage/>}/>}/>
+        <Route path="/sell" element={<ManagerOrStaffRoute element={<SellPage/>}/>}/>
+        <Route path="/return" element={<ManagerOrStaffRoute element={<ReturnPage/>}/>}/>
         <Route path="/transaction" element={<AdminManagerRoute element={<TransactionsPage/>}/>}/>
         <Route path="/transaction-detail/:transactionId" element={<AdminManagerRoute element={<TransactionDetailsPage/>}/>}/>
         <Route path="/dashboard" element={<AdminManagerRoute element={<DashboardPage/>}/>}/>
@@ -62,8 +62,8 @@ function App() {
         <Route path="/profile" element={<ProtectedRoute element={<ProfilePage/>}/>}/>
         <Route path="/users" element={<AdminRoute element={<UserPage/>}/>}/>
 
-        <Route path="/warranty-check" element={<ManagerRoute element={<WarrantyCheckPage />}/>} />
-        <Route path="/news" element={<AdminManagerRoute element={<NewsPage />}/>} />
+        <Route path="/warranty-check" element={<ManagerOrStaffRoute element={<WarrantyCheckPage />}/>} />
+        <Route path="/news" element={<AllRolesRoute element={<NewsPage />}/>} />
         <Route path="/notifications" element={<ManagerRoute element={<NotificationPage />} />} />
 
         {/* FALLBACK ROUTE */}
