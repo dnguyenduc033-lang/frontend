@@ -26,7 +26,7 @@ const CategoryPage = () => {
   const [categories, setCategories] = useState([]);
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
-  const isAdmin = ApiService.isAdmin();
+  const canManage = ApiService.isAdminOrManager();
 
   useEffect(() => {
     const getCategories = async () => {
@@ -97,8 +97,7 @@ const CategoryPage = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            {isAdmin && (
-              /* SỬA ĐƯỜNG DẪN TẠI ĐÂY: Từ /categories/add thành /category/add */
+            {canManage && (
               <button 
                 onClick={() => navigate("/category/add")}
                 className="px-5 py-2.5 bg-[#008080] hover:bg-teal-700 text-white font-bold rounded-xl shadow-md text-sm transition-all active:scale-95 cursor-pointer flex items-center gap-2"
@@ -130,7 +129,7 @@ const CategoryPage = () => {
                   </div>
                 </div>
 
-                {isAdmin && (
+                {canManage && (
                   <div className="flex items-center gap-1">
                     {/* SỬA ĐƯỜNG DẪN TẠI ĐÂY: Từ /categories/edit thành /category/edit */}
                     <button 

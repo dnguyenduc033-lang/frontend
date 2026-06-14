@@ -125,7 +125,7 @@ const RegisterPage = () => {
                 <input
                   className="w-full p-3 border border-slate-200 rounded-xl text-sm font-medium focus:border-[#00a884] outline-none transition-all"
                   type="email"
-                  placeholder="email@inventory.com"
+              
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -138,7 +138,7 @@ const RegisterPage = () => {
                 <input
                   className="w-full p-3 border border-slate-200 rounded-xl text-sm font-medium focus:border-[#00a884] outline-none transition-all"
                   type="text"
-                  placeholder="09xxxxxxxx"
+                
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   required

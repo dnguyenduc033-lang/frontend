@@ -26,7 +26,7 @@ const ProductPage = () => {
   const [showLowStockOnly, setShowLowStockOnly] = useState(false); 
 
   const navigate = useNavigate();
-  const isAdmin = ApiService.isAdmin();
+  const canManage = ApiService.isAdminOrManager();
 
   const brands = ["Apple", "Samsung", "Xiaomi", "Lenovo", "Acer", "Asus"];
 
@@ -223,7 +223,7 @@ const ProductPage = () => {
               <p className="text-sm text-slate-500 font-medium">Tra cứu định danh, thông số và vị trí lưu trữ nội bộ.</p>
             </div>
           </div>
-          {isAdmin && (
+          {canManage && (
             <button 
               className="bg-[#00a884] text-white font-bold h-[46px] px-6 rounded-xl hover:bg-teal-700 active:scale-95 transition-all shadow-[0_4px_12px_rgba(0,168,132,0.15)] text-sm cursor-pointer whitespace-nowrap flex items-center gap-2"
               onClick={() => navigate("/add-product")}
@@ -440,16 +440,14 @@ const ProductPage = () => {
                     </div>
 
                     <div className="flex gap-2">
-                      {/* Nút Chi tiết */}
                       <button 
-                        className={`py-2 px-3 bg-white border border-slate-200 text-slate-600 hover:text-white hover:bg-[#00a884] hover:border-[#00a884] rounded-xl font-bold text-xs shadow-sm hover:shadow-[0_4px_12px_rgba(0,168,132,0.12)] transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${isAdmin ? 'flex-[2]' : 'w-full'}`}
+                        className={`py-2 px-3 bg-white border border-slate-200 text-slate-600 hover:text-white hover:bg-[#00a884] hover:border-[#00a884] rounded-xl font-bold text-xs shadow-sm hover:shadow-[0_4px_12px_rgba(0,168,132,0.12)] transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${canManage ? 'flex-[2]' : 'w-full'}`}
                         onClick={() => navigate(`/product-detail/${product.id}`)}
                       >
                         <Eye size={14} /> Chi tiết
                       </button>
 
-                      {/* Nút Xóa (Chỉ Admin) */}
-                      {isAdmin && (
+                      {canManage && (
                         <button 
                           className="flex-1 py-2 bg-rose-50 border border-rose-200 text-rose-600 hover:text-white hover:bg-rose-600 hover:border-rose-600 rounded-xl font-bold text-xs transition-all duration-200 cursor-pointer flex items-center justify-center" 
                           onClick={() => handleDeleteProduct(product.id)}

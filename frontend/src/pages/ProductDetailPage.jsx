@@ -14,7 +14,7 @@ const ProductDetailPage = () => {
   const [expandedGroups, setExpandedGroups] = useState({});
   const [showSerials, setShowSerials] = useState(false);
 
-  const isAdmin = ApiService.isAdmin();
+  const canManage = ApiService.isAdminOrManager();
 
   useEffect(() => {
     const fetchProductDetails = async () => {
@@ -228,7 +228,7 @@ const ProductDetailPage = () => {
 
             {/* Khối nút hành động */}
             <div className="pt-2 flex flex-wrap gap-4">
-              {isAdmin && (
+              {canManage && (
                 <button 
                   style={{ backgroundColor: "#1e293b", color: "#ffffff" }}
                   className="px-8 py-3.5 font-bold rounded-xl cursor-pointer text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
