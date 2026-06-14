@@ -16,7 +16,7 @@ axios.interceptors.response.use(
 
 export default class ApiService {
 
-    static BASE_URL = "http://localhost:5050/api";
+    static BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5050/api";
     static ENCRYPTION_KEY = "nguyendai-dev-inventory";
 
     //encrypt data using cryptoJs
@@ -191,6 +191,15 @@ export default class ApiService {
         return response.data;
     }
 
+    //Thêm tính năng mới
+    static async getProductsByDate(date) {
+        const response = await axios.get(`${this.BASE_URL}/products/by-date`, {
+            headers: this.getHeader(),
+            params: { date }
+        });
+        return response.data;
+    }
+
     /** CATEGORY ENDPOINTS */
 
     static async createCategory(category) {
@@ -329,6 +338,14 @@ export default class ApiService {
     static async updateTransactionStatusOnly(id, status) {
         const response = await axios.patch(`${this.BASE_URL}/transactions/${id}/status?status=${status}`, null, {
             headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    static async downloadTransactionPDF(transactionId) {
+        const response = await axios.get(`${this.BASE_URL}/transactions/${transactionId}/export-pdf`, {
+            headers: this.getHeader(),
+            responseType: 'blob' 
         });
         return response.data;
     }

@@ -16,11 +16,14 @@ const ProductPage = () => {
   const [selectedSupplier, setSelectedSupplier] = useState(""); 
   const [selectedPriceRange, setSelectedPriceRange] = useState("");
   const [selectedSort, setSelectedSort] = useState("");
+  const [selecteddate, setselecteddate] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]); 
 
   const [message, setMessage] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8; 
+  const itemsPerPage = 8;
+  const [lowStockProducts, setLowStockProducts] = useState([]);
+  const [showLowStockOnly, setShowLowStockOnly] = useState(false); 
 
   const navigate = useNavigate();
   const isAdmin = ApiService.isAdmin();
@@ -61,6 +64,9 @@ const ProductPage = () => {
 
         const catData = await ApiService.getAllCategory();
         setCategories(catData?.categories || []);
+
+        const lowStockData = await ApiService.getLowStockProducts();
+        setLowStockProducts(lowStockData?.products || []);
 
         if (typeof ApiService.getAllSuppliers === 'function') {
           const supData = await ApiService.getAllSuppliers();
@@ -141,9 +147,42 @@ const ProductPage = () => {
       result.sort((a, b) => (b.id || 0) - (a.id || 0));
     }
 
+    if (showLowStockOnly) {
+      result = result.filter(p => p.stockQuantity <= (p.minStockLevel || 5));
+    }
+
     setFilteredProducts(result);
     setCurrentPage(1);
-  }, [searchTerm, selectedCategory, selectedBrand, selectedSupplier, selectedPriceRange, selectedSort, allProducts]);
+  }, [searchTerm, selectedCategory, selectedBrand, selectedSupplier, selectedPriceRange, selectedSort, allProducts, showLowStockOnly]);
+  
+  useEffect(() => {
+    const fetchproducts = async () => {
+      try {
+        let productdata;
+        if (selecteddate && selecteddate !== "") {
+          // 🌟 Đã sửa thành ApiService.getProductsByDate
+          productdata = await ApiService.getProductsByDate(selecteddate);
+        } else {
+          // 🌟 Đã sửa thành ApiService.getAllProducts
+          productdata = await ApiService.getAllProducts();
+        }
+        
+        let plist = [];
+        if (Array.isArray(productdata)) {
+          plist = productdata; 
+        } else if (productdata) {
+          plist = productdata.products || productdata.content || productdata.data || []; 
+        }
+        
+        // 🌟 Đã sửa thành setAllProducts
+        setAllProducts(plist);
+      } catch (error) {
+        console.error("Lỗi nạp sản phẩm: ", error);
+      }
+    };
+    fetchproducts();
+  }, [selecteddate]);
+
   const handleDeleteProduct = async (productId) => {
     if (window.confirm("Bạn có chắc chắn muốn gỡ bỏ hoàn toàn thiết bị này?")) {
       try {
@@ -202,6 +241,31 @@ const ProductPage = () => {
           </div>
         )}
 
+        {/* BANNER CẢNH BÁO HÀNG SẮP HẾT */}
+        {lowStockProducts.length > 0 && (
+          <div className={"mb-6 p-4 rounded-2xl border flex items-center justify-between gap-4 transition-all " + (showLowStockOnly ? "bg-rose-50 border-rose-300" : "bg-amber-50 border-amber-200")}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                <AlertTriangle size={20} className="text-amber-600" />
+              </div>
+              <div>
+                <p className="font-black text-slate-800 text-sm">
+                  Cảnh báo tồn kho!
+                </p>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Có <span className="font-black text-rose-600">{lowStockProducts.length}</span> sản phẩm đang dưới mức tồn kho tối thiểu
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowLowStockOnly(!showLowStockOnly)}
+              className={"px-4 py-2 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer " + (showLowStockOnly ? "bg-rose-500 text-white hover:bg-rose-600" : "bg-amber-500 text-white hover:bg-amber-600")}
+            >
+              {showLowStockOnly ? "Xem tất cả" : "Xem ngay"}
+            </button>
+          </div>
+        )}
+
         {/* --- KHỐI BỘ LỌC & TÌM KIẾM TÂN TRANG --- */}
         <div className="bg-white rounded-2xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] border border-slate-100 p-6 mb-10 flex flex-col gap-5">
           
@@ -227,7 +291,7 @@ const ProductPage = () => {
           </div>
 
           {/* Hàng 2: Dropdowns bộ lọc thông minh */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             
             {/* 1. Lọc Danh mục */}
             <div className="relative">
@@ -299,6 +363,16 @@ const ProductPage = () => {
                 ))}
               </select>
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs">▼</span>
+            </div>
+
+            <div className="relative">
+              <input
+                type="date"
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-[#00a884] text-sm text-slate-600 font-bold transition-all cursor-pointer"
+                value={selecteddate}
+                onChange={(e) => setselecteddate(e.target.value)}
+                title="Lọc theo ngày tạo"
+              />
             </div>
             
           </div>

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import Layout from "../component/Layout";
 import ApiService from "../service/ApiService";
 import { useNavigate, useParams } from "react-router-dom";
-// 🌟 CHỈ DÙNG CÁC ICON ĐÃ CHỨNG MINH LÀ AN TOÀN TRONG DỰ ÁN CỦA BẠN
 import { 
   FileText, 
   Package, 
@@ -11,7 +10,8 @@ import {
   Clock, 
   XCircle,
   Calendar,
-  Hash 
+  Hash,
+  Download
 } from "lucide-react";
 
 const TransactionDetailsPage = () => {
@@ -20,6 +20,8 @@ const TransactionDetailsPage = () => {
   const [message, setMessage] = useState("");
 
   const [loading, setLoading] = useState(true);
+
+  const [exporting, setExporting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -55,6 +57,24 @@ const TransactionDetailsPage = () => {
 
     getTransaction();
   }, [transactionId]);
+
+  const handleExportPDF = async () => {
+    try {
+      setExporting(true);
+      const blob = await ApiService.downloadTransactionPDF(transactionId);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `HoSo_GiaoDich_${transactionId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (error) {
+      setMessage("Lỗi hệ thống: Không thể tải xuống hóa đơn PDF.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const translateType = (type) => {
     if (type === 'PURCHASE') return 'Nhập kho';
@@ -112,7 +132,6 @@ const TransactionDetailsPage = () => {
               className="w-12 h-12 bg-white border border-slate-200 rounded-2xl flex items-center justify-center text-slate-500 hover:text-[#00a884] hover:border-[#00a884] hover:shadow-md transition-all shrink-0"
               title="Quay lại danh sách"
             >
-              {/* SVG thuần an toàn tuyệt đối thay thế ArrowLeft */}
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
               </svg>
@@ -127,6 +146,22 @@ const TransactionDetailsPage = () => {
               <p className="text-sm text-slate-500 font-medium">Xem hồ sơ chứng từ và thông tin chi tiết</p>
             </div>
           </div>
+
+          {/* 🌟 NÚT XUẤT PDF Ở MÉP PHẢI MÀN HÌNH */}
+          {transaction && (
+            <button
+              onClick={handleExportPDF}
+              disabled={exporting}
+              className="flex items-center gap-2 px-5 py-3 bg-slate-800 text-white font-bold text-sm rounded-xl hover:bg-slate-900 transition-colors shadow-sm disabled:bg-slate-400 active:scale-95"
+            >
+              {exporting ? (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              ) : (
+                <Download size={18} />
+              )}
+              {exporting ? "Đang xuất file..." : "Xuất hóa đơn PDF"}
+            </button>
+          )}
         </div>
 
         {loading ? (
@@ -187,37 +222,37 @@ const TransactionDetailsPage = () => {
                   </div>
                 </div>
               </div>
-
-            </div>
             
-            {/* KHỐI 2: DANH SÁCH SERIAL */}
-            {transaction.productItems && transaction.productItems.length > 0 ? (
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <h2 className="text-lg font-extrabold text-slate-800 flex items-center gap-2.5 border-b border-slate-100 pb-4 mb-5">
-                  <span className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center text-violet-500">
-                    <Hash size={18} />
-                  </span>
-                  Danh Sách Mã Serial / IMEI Giao Dịch
-                  <span className="ml-auto text-xs font-bold bg-violet-50 text-violet-600 px-2.5 py-1 rounded-lg border border-violet-100">
-                    {transaction.productItems.length} chiếc
-                  </span>
-                </h2>
-                <div className="flex flex-wrap gap-2">
-                  {transaction.productItems.map((item, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold font-mono border bg-slate-50 text-slate-600 border-slate-200"
-                    >
-                      {item.serialNumber}
+              {/* KHỐI 2: DANH SÁCH SERIAL */}
+              {transaction.productItems && transaction.productItems.length > 0 ? (
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                  <h2 className="text-lg font-extrabold text-slate-800 flex items-center gap-2.5 border-b border-slate-100 pb-4 mb-5">
+                    <span className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center text-violet-500">
+                      <Hash size={18} />
                     </span>
-                  ))}
+                    Danh Sách Mã Serial / IMEI Giao Dịch
+                    <span className="ml-auto text-xs font-bold bg-violet-50 text-violet-600 px-2.5 py-1 rounded-lg border border-violet-100">
+                      {transaction.productItems.length} chiếc
+                    </span>
+                  </h2>
+                  <div className="flex flex-wrap gap-2">
+                    {transaction.productItems.map((item, index) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold font-mono border bg-slate-50 text-slate-600 border-slate-200"
+                      >
+                        {item.serialNumber}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 text-center py-8 text-slate-400">
-                <p className="text-sm font-medium">Không tìm thấy mã sê-ri riêng lẻ đính kèm cho giao dịch này.</p>
-              </div>
-            )}
+              ) : (
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 text-center py-8 text-slate-400">
+                  <p className="text-sm font-medium">Không tìm thấy mã sê-ri riêng lẻ đính kèm cho giao dịch này.</p>
+                </div>
+              )}
+            
+            </div>
 
             {/* CỘT PHẢI: NGƯỜI THỰC HIỆN & THÔNG TIN SẢN PHẨM */}
             <div className="space-y-6">

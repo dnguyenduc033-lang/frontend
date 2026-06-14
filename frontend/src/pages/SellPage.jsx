@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Layout from "../component/Layout";
 import ApiService from "../service/ApiService";
 
@@ -15,6 +15,7 @@ const SellPage = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const quantityRef = useRef(null);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -115,6 +116,12 @@ const SellPage = () => {
       return;
     }
 
+    // chặn xác nhận nếu số lượng xuất lớn hơn tồn kho
+    if (selectedProduct && parseInt(quantity) > selectedProduct.stockQuantity) {
+      showMessage(`Số lượng xuất (${quantity}) không được vượt quá số tồn kho hiện tại (${selectedProduct.stockQuantity})!`);
+      return;
+    }
+
     if (serialNumbers.length !== parseInt(quantity)) {
         showMessage(`Số lượng sê-ri (${serialNumbers.length}) không khớp với số lượng xuất (${quantity}).`);
         return;
@@ -142,6 +149,7 @@ const SellPage = () => {
     setDescription("");
     setNote("");
     setQuantity("");
+    if (quantityRef.current) quantityRef.current.value = "";
     setSerialNumbers([]);
     setCurrentSerial("");
     setSearchTerm("");
@@ -157,7 +165,15 @@ const SellPage = () => {
 
   return (
     <Layout>
-      {message && <div className="bg-[#d4edda] text-[#155724] p-2.5 rounded-md text-center mb-[30px] border border-[#c3e6cb] shadow-sm font-medium">{message}</div>}
+      {message && (
+        <div className={`p-2.5 rounded-md text-center mb-[30px] border shadow-sm font-medium ${
+          message.includes("Vui lòng") || message.includes("Lỗi") || message.includes("Hãy nhập lại") || message.includes("vượt quá") 
+            ? "bg-[#f8d7da] text-[#721c24] border-[#f5c6cb]" 
+            : "bg-[#d4edda] text-[#155724] border-[#c3e6cb]"
+        }`}>
+          {message}
+        </div>
+      )}
       
       <div className="max-w-[800px] mx-auto p-4 md:p-8 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-[15px] border-t-4 border-[#008080]">
         <h1 className="text-3xl font-bold text-[#008080] text-center mb-8">Xuất Kho Bán Hàng</h1>
@@ -212,7 +228,44 @@ const SellPage = () => {
 
           <div className="flex flex-col gap-2">
             <label className="text-base font-semibold text-[#2F4F4F]">Số lượng xuất kho <span className="text-red-500">*</span></label>
-            <input className="p-3 border border-[#ccc] rounded-md text-base w-full focus:border-[#008080] outline-none" type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} required />
+            <input
+              ref={quantityRef}
+              className="p-3 border border-[#ccc] rounded-md text-base w-full focus:border-[#008080] outline-none"
+              type="text"
+              inputMode="numeric"
+              placeholder="Nhập số lượng bằng tay..."
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^0-9]/g, '');
+
+                // Luôn ép DOM chỉ hiện ký tự số
+                e.target.value = val;
+
+                if (val === "") {
+                  setQuantity("");
+                  return;
+                }
+
+                // Chưa chọn sản phẩm
+                if (!productId) {
+                  showMessage("Vui lòng kích chọn một sản phẩm từ danh sách trước!");
+                  e.target.value = "";
+                  setQuantity("");
+                  return;
+                }
+
+                // Vượt tồn kho
+                const stock = parseInt(selectedProduct?.stockQuantity, 10) || 0;
+                if (parseInt(val, 10) > stock) {
+                  showMessage(`Hãy nhập lại! Số lượng xuất vượt quá số tồn kho hiện tại (${stock}).`);
+                  e.target.value = "";
+                  setQuantity("");
+                  return;
+                }
+
+                setQuantity(val);
+              }}
+              required
+            />
           </div>
 
           <div className="flex flex-col gap-2">

@@ -132,6 +132,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             <ul>
               {isAdminOrManager && <MenuItem to="/category" icon={Layers} label="Danh mục" />}
               <MenuItem to="/product" icon={Package} label="Sản phẩm" />
+              
               {isAdminOrManager && <MenuItem to="/supplier" icon={Building2} label="Nhà cung cấp" />}
               {!isAdmin && !isStaff && <MenuItem to="/purchase-request" icon={ShoppingCart} label="Yêu cầu nhập hàng" />}
               {isAdmin && <MenuItem to="/purchase-approval" icon={ShoppingCart} label="Duyệt nhập hàng" />}
