@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
-  X, Mail, Phone, Briefcase, User, Lock, Check, Calendar, UserCheck, Pencil, Loader2
+  X, Mail, Phone, Briefcase, User, Lock, Check, Calendar, UserCheck, Pencil, Loader2, Trash2
 } from "lucide-react";
 import ApiService from "../../service/ApiService";
 
@@ -28,10 +28,16 @@ const formatDate = (dateStr) => {
   return new Date(dateStr).toLocaleString("vi-VN");
 };
 
-const UserDetailModal = ({ user, loading, onClose, onSuccess }) => {
+const UserDetailModal = ({ user, loading, onClose, onSuccess, onDeleteSuccess }) => {
   const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const currentUserRole = ApiService.getRole();
+  // Admin đang xem chính mình khi user.role === ADMIN (vì chỉ Admin mới vào UserPage)
+  // Nếu user đang xem là Admin thì đó là chính mình
+  const isViewingAdmin = user?.role === "ADMIN";
+  const isViewingOwnProfile = isViewingAdmin; // Admin chỉ xem chính mình khi role là ADMIN
 
   useEffect(() => {
     document.body.classList.add("user-modal-open");
@@ -63,6 +69,21 @@ const UserDetailModal = ({ user, loading, onClose, onSuccess }) => {
       alert(error.response?.data?.message || "Có lỗi xảy ra khi đổi mật khẩu.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa tài khoản ${user.name} không? Hành động này không thể hoàn tác!`)) return;
+    setDeleting(true);
+    try {
+      await ApiService.deleteUser(user.id);
+      onSuccess(`Đã xóa tài khoản ${user.name} thành công!`);
+      if (onDeleteSuccess) onDeleteSuccess(user.id);
+      onClose();
+    } catch (error) {
+      alert(error.response?.data?.message || "Có lỗi xảy ra khi xóa tài khoản.");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -120,34 +141,52 @@ const UserDetailModal = ({ user, loading, onClose, onSuccess }) => {
             />
             <InfoRow icon={Calendar} label="Ngày tạo tài khoản" value={formatDate(user.createdAt)} />
 
-            {!isEditingPassword ? (
+            {/* Nút Xóa — chỉ hiện khi xem tài khoản người khác và không phải Admin */}
+            {!isViewingOwnProfile && !isViewingAdmin && (
               <button
                 type="button"
-                onClick={() => setIsEditingPassword(true)}
-                className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 transition-colors cursor-pointer"
+                onClick={handleDeleteUser}
+                disabled={deleting}
+                className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl text-sm font-bold text-rose-600 transition-colors cursor-pointer disabled:opacity-60"
               >
-                <Pencil size={16} />
-                Đổi mật khẩu
+                {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                Xóa tài khoản
               </button>
-            ) : (
-              <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
-                <Lock size={18} className="text-amber-500 shrink-0" />
-                <input
-                  type="password"
-                  placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"
-                  className="flex-1 px-3 py-2 bg-white border border-amber-200 rounded-lg outline-none text-sm font-medium focus:border-amber-500"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
-                <button
-                  onClick={handleSavePassword}
-                  disabled={saving}
-                  className="p-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white rounded-lg cursor-pointer"
-                  title="Lưu mật khẩu"
-                >
-                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={3} />}
-                </button>
-              </div>
+            )}
+
+            {/* Nút Đổi mật khẩu — chỉ hiện khi xem profile của chính mình */}
+            {isViewingOwnProfile && (
+              <>
+                {!isEditingPassword ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingPassword(true)}
+                    className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 transition-colors cursor-pointer"
+                  >
+                    <Pencil size={16} />
+                    Đổi mật khẩu
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+                    <Lock size={18} className="text-amber-500 shrink-0" />
+                    <input
+                      type="password"
+                      placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"
+                      className="flex-1 px-3 py-2 bg-white border border-amber-200 rounded-lg outline-none text-sm font-medium focus:border-amber-500"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
+                    <button
+                      onClick={handleSavePassword}
+                      disabled={saving}
+                      className="p-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white rounded-lg cursor-pointer"
+                      title="Lưu mật khẩu"
+                    >
+                      {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={3} />}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
