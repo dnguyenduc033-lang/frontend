@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../component/Layout";
 import ApiService from "../service/ApiService";
-import { ClipboardList, Plus, X, Check, Clock, XCircle, PackageCheck } from "lucide-react";
+import { ClipboardList, Plus, X, Check, Clock, XCircle, PackageCheck, ScanBarcode } from "lucide-react";
+import ScannerModal from "../component/ScannerModal";
 
 const STATUS_LABEL = {
   AWAITING_APPROVAL: { label: "Chờ duyệt",      color: "bg-amber-100 text-amber-700 border-amber-200" },
@@ -28,6 +29,23 @@ const PurchaseRequestPage = () => {
   const [completingRequest, setCompletingRequest] = useState(null);
   const [serialNumbers, setSerialNumbers] = useState([]);
   const [currentSerial, setCurrentSerial] = useState("");
+
+  // THÊM MỚI TỪ ĐÂY
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+
+  const handleScanSuccess = (decodedSerial) => {
+    const val = decodedSerial.trim();
+    if (val && !serialNumbers.includes(val)) {
+      if (serialNumbers.length < completingRequest.quantity) {
+        setSerialNumbers(prev => [...prev, val]);
+      } else {
+        showMessage("Đã đủ số lượng serial!", "error");
+      }
+    } else if (serialNumbers.includes(val)) {
+      showMessage("Mã Seri này đã được quét!", "error");
+    }
+  };
+  // ĐẾN ĐÂY
 
   useEffect(() => { fetchData(); }, []);
 
@@ -310,6 +328,16 @@ const PurchaseRequestPage = () => {
                     onKeyDown={handleSerialKeyDown}
                     disabled={serialNumbers.length >= completingRequest.quantity}
                   />
+                  {/* THÊM NÚT NÀY VÀO DƯỚI THẺ INPUT */}
+                  <button 
+                    type="button" 
+                    onClick={() => setIsScannerOpen(true)}
+                    disabled={serialNumbers.length >= completingRequest.quantity}
+                    className="p-1.5 ml-auto text-teal-600 hover:bg-teal-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    title="Sử dụng Camera để quét mã"
+                  >
+                    <ScanBarcode size={22} strokeWidth={2.5} />
+                  </button>
                 </div>
                 <p className="text-xs text-slate-400 font-semibold">
                   Đã nhập: <span className={serialNumbers.length === completingRequest.quantity ? "text-emerald-600" : "text-[#00a884]"}>{serialNumbers.length}</span> / {completingRequest.quantity}
@@ -325,6 +353,13 @@ const PurchaseRequestPage = () => {
             </div>
           </div>
         )}
+
+        {/* THÊM KHỐI NÀY VÀO CUỐI */}
+        <ScannerModal 
+          isOpen={isScannerOpen} 
+          onClose={() => setIsScannerOpen(false)} 
+          onScanSuccess={handleScanSuccess} 
+        />
 
       </div>
     </Layout>

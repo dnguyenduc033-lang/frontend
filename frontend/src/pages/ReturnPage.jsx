@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../component/Layout";
 import ApiService from "../service/ApiService";
+import { ScanBarcode } from "lucide-react"; // Gọi icon mã vạch
+import ScannerModal from "../component/ScannerModal"; // Gọi component máy quét
 
 const ReturnPage = () => {
   const [products, setProducts] = useState([]);
@@ -16,6 +18,27 @@ const ReturnPage = () => {
 
   const [serialNumbers, setSerialNumbers] = useState([]);
   const [currentSerial, setCurrentSerial] = useState("");
+
+  // THÊM MỚI: State điều khiển máy quét
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+
+  // THÊM MỚI: Hàm xử lý khi camera chộp được mã
+  const handleScanSuccess = (decodedSerial) => {
+    const val = decodedSerial.trim();
+    if (!productId || !quantity) {
+      showMessage("Vui lòng chọn sản phẩm và nhập số lượng trước.");
+      return;
+    }
+    if (val && !serialNumbers.includes(val)) {
+      if (serialNumbers.length < parseInt(quantity)) {
+        setSerialNumbers(prev => [...prev, val]);
+      } else {
+        showMessage("Đã quét đủ số lượng yêu cầu!");
+      }
+    } else if (serialNumbers.includes(val)) {
+      showMessage("Mã Seri này đã được quét!");
+    }
+  };
 
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -282,6 +305,17 @@ const ReturnPage = () => {
                   onKeyDown={handleSerialKeyDown} 
                   disabled={!quantity || serialNumbers.length >= parseInt(quantity)} 
                 />
+
+                <button 
+                  type="button" 
+                  onClick={() => setIsScannerOpen(true)}
+                  disabled={!quantity || serialNumbers.length >= parseInt(quantity)}
+                  className="p-1.5 ml-auto text-orange-600 hover:bg-orange-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  title="Quét bằng Camera"
+                >
+                  <ScanBarcode size={24} strokeWidth={2.5} />
+                </button>
+
             </div>
           </div>
 
@@ -295,6 +329,13 @@ const ReturnPage = () => {
           </button>
         </form>
       </div>
+      
+      {/* THÊM MỚI: Popup Máy quét phải nằm ở đây */}
+      <ScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScanSuccess={handleScanSuccess}
+      />
 
       {isDropdownOpen && <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsDropdownOpen(false)} />}
     </Layout>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import Layout from "../component/Layout";
 import ApiService from "../service/ApiService";
+import { ScanBarcode } from "lucide-react"; // Gọi icon mã vạch
+import ScannerModal from "../component/ScannerModal"; // Gọi component máy quét
 
 const SellPage = () => {
   const [products, setProducts] = useState([]);
@@ -12,6 +14,27 @@ const SellPage = () => {
 
   const [serialNumbers, setSerialNumbers] = useState([]);
   const [currentSerial, setCurrentSerial] = useState("");
+
+  // THÊM MỚI: State điều khiển máy quét
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+
+  // THÊM MỚI: Hàm xử lý khi camera chộp được mã
+  const handleScanSuccess = (decodedSerial) => {
+    const val = decodedSerial.trim();
+    if (!productId || !quantity) {
+      showMessage("Vui lòng chọn sản phẩm và nhập số lượng trước.");
+      return;
+    }
+    if (val && !serialNumbers.includes(val)) {
+      if (serialNumbers.length < parseInt(quantity)) {
+        setSerialNumbers(prev => [...prev, val]);
+      } else {
+        showMessage("Đã quét đủ số lượng yêu cầu!");
+      }
+    } else if (serialNumbers.includes(val)) {
+      showMessage("Mã Seri này đã được quét!");
+    }
+  };
 
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -279,13 +302,32 @@ const SellPage = () => {
 
             <div className={`p-2 border rounded-md focus-within:border-[#008080] flex flex-wrap gap-2 bg-white min-h-[50px] ${!quantity ? 'bg-gray-100 cursor-not-allowed border-[#ccc]' : 'border-[#ccc]'}`}>
                 {serialNumbers.map((serial, index) => (
-                    <span key={index} className="flex items-center gap-1 px-2.5 py-1 rounded-md text-sm font-medium border bg-[#fff3cd] text-[#856404] border-[#ffeeba]">
+                    <span key={index} className="flex items-center gap-1 bg-[#e0f2f1] text-[#008080] px-2.5 py-1 rounded-md text-sm font-medium">
                         {serial}
-                        <button type="button" onClick={() => removeSerial(index)} className="hover:text-red-500 font-bold ml-1">&times;</button>
+                        <button type="button" onClick={() => removeSerial(index)} className="text-[#008080] hover:text-red-500 font-bold ml-1">&times;</button>
                     </span>
                 ))}
-                <input type="text" className="flex-1 min-w-[150px] outline-none text-base bg-transparent p-1" placeholder={!quantity ? "Nhập số lượng trước..." : "Quét mã vạch vào đây..."} value={currentSerial} onChange={(e) => setCurrentSerial(e.target.value)} onKeyDown={handleSerialKeyDown} disabled={!quantity || serialNumbers.length >= parseInt(quantity)} />
+                
+                <input type="text" className="flex-1 min-w-[150px] outline-none text-base bg-transparent p-1" placeholder={!quantity ? "Nhập số lượng trước..." : "Quét mã Seri vào đây..."} value={currentSerial} onChange={(e) => setCurrentSerial(e.target.value)} onKeyDown={handleSerialKeyDown} disabled={!quantity || serialNumbers.length >= parseInt(quantity)} />
+                
+                {/* THÊM MỚI: Nút bấm kích hoạt Camera nằm cùng hàng với Input */}
+                <button 
+                  type="button" 
+                  onClick={() => setIsScannerOpen(true)} 
+                  disabled={!quantity || serialNumbers.length >= parseInt(quantity)}
+                  className="p-1.5 ml-auto text-[#008080] hover:bg-teal-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  title="Quét bằng Camera"
+                >
+                  <ScanBarcode size={24} strokeWidth={2.5} />
+                </button>
             </div>
+
+            {/* THÊM MỚI: Component Máy quét (Sẽ ẩn/hiện dựa vào state isScannerOpen) */}
+            <ScannerModal
+              isOpen={isScannerOpen}
+              onClose={() => setIsScannerOpen(false)}
+              onScanSuccess={handleScanSuccess}
+            />
             <div className="flex justify-between text-xs font-semibold mt-1">
                 <span className="text-gray-500">Đã sẵn sàng xuất: <span className={serialNumbers.length === parseInt(quantity) && quantity !== "0" ? "text-green-600 font-bold" : "text-[#856404]"}>{serialNumbers.length}</span> / {quantity || 0} mã</span>
                 {serialNumbers.length > 0 && <button type="button" onClick={() => { setSerialNumbers([]); setQuantity(""); }} className="text-red-500 hover:underline">Xóa tất cả</button>}

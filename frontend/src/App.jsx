@@ -12,7 +12,7 @@ import AddEditSupplierPage from "./pages/AddEditSupplierPage";
 import ProductPage from "./pages/ProductPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import AddEditProductPage from "./pages/AddEditProductPage";
-import PurchasePage from "./pages/PurchasePage";
+
 import SellPage from "./pages/SellPage";
 import ReturnPage from "./pages/ReturnPage";
 import TransactionsPage from "./pages/TransactionsPage";
@@ -49,7 +49,7 @@ function App() {
         <Route path="/add-product" element={<AdminManagerRoute element={<AddEditProductPage/>}/>}/>
         <Route path="/edit-product/:productId" element={<AdminManagerRoute element={<AddEditProductPage/>}/>}/>
         <Route path="/product-detail/:productId" element={<AllRolesRoute element={<ProductDetailPage/>}/>}/>
-        <Route path="/purchase" element={<ManagerRoute element={<PurchasePage/>}/>}/>
+
         <Route path="/sell" element={<ManagerOrStaffRoute element={<SellPage/>}/>}/>
         <Route path="/return" element={<ManagerOrStaffRoute element={<ReturnPage/>}/>}/>
         <Route path="/transaction" element={<AdminManagerRoute element={<TransactionsPage/>}/>}/>
