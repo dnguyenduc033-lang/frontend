@@ -10,6 +10,7 @@ const SupplierPage = () => {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
   const isAdmin = ApiService.isAdmin();
+  const isAdminOrManager = ApiService.isAdminOrManager();
 
   useEffect(() => {
     const getSuppliers = async () => {
@@ -61,7 +62,7 @@ const SupplierPage = () => {
               <p className="text-sm text-slate-500 font-medium">Quản lý mạng lưới đơn vị cung cấp thiết bị hệ thống.</p>
             </div>
           </div>
-          {isAdmin && (
+          {isAdminOrManager && (
             <button 
               className="bg-[#00a884] text-white font-bold h-[46px] px-6 rounded-xl hover:bg-teal-700 active:scale-95 transition-all shadow-md flex items-center gap-2 cursor-pointer"
               onClick={() => navigate("/add-supplier")}
@@ -116,7 +117,7 @@ const SupplierPage = () => {
                 </div>
               </div>
 
-              {isAdmin && (
+              {isAdminOrManager && (
                 <div className="flex gap-2 w-full sm:w-auto">
                   <button 
                     className="flex-1 sm:flex-none p-2.5 bg-slate-50 text-slate-600 hover:bg-teal-600 hover:text-white rounded-xl transition-all cursor-pointer border border-slate-100"

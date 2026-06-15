@@ -67,7 +67,11 @@ const LoginPage = () => {
         ApiService.saveToken(res.token);
         ApiService.saveRole(res.role);
         showMessage(res.message, "success");
-        navigate("/dashboard");
+        if (res.role === "STAFF") {
+          navigate("/product");
+        } else {
+          navigate("/dashboard");
+        }
       }
     } catch (error) {
       const newCount = failCount + 1;

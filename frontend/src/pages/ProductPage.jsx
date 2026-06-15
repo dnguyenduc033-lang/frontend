@@ -51,32 +51,31 @@ const ProductPage = () => {
     const fetchInitialData = async () => {
       try {
         const productData = await ApiService.getAllProducts();
-        
-        let pList = [];
-        if (Array.isArray(productData)) {
-          pList = productData; 
-        } else if (productData) {
-          pList = productData.products || productData.content || productData.data || []; 
-        }
-        
+        let pList = Array.isArray(productData)
+          ? productData
+          : (productData?.products || productData?.content || productData?.data || []);
         setAllProducts(pList);
-        setFilteredProducts(pList); 
+        setFilteredProducts(pList);
+      } catch (error) {
+        setMessage("Không thể tải danh sách sản phẩm từ máy chủ.");
+      }
 
+      try {
         const catData = await ApiService.getAllCategory();
         setCategories(catData?.categories || []);
+      } catch (_) {}
 
+      try {
         const lowStockData = await ApiService.getLowStockProducts();
         setLowStockProducts(lowStockData?.products || []);
+      } catch (_) {}   // STAFF bị 403 → bỏ qua yên lặng
 
-        if (typeof ApiService.getAllSuppliers === 'function') {
+      try {
+        if (typeof ApiService.getAllSuppliers === "function") {
           const supData = await ApiService.getAllSuppliers();
           setSuppliers(supData?.suppliers || supData || []);
         }
-
-      } catch (error) {
-        console.error("Lỗi dòng nạp dữ liệu: ", error);
-        setMessage("Không thể đồng bộ dữ liệu từ máy chủ ứng dụng.");
-      }
+      } catch (_) {}   // STAFF bị 403 → bỏ qua yên lặng
     };
     fetchInitialData();
   }, []);
