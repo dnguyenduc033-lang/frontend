@@ -23,24 +23,82 @@ const TrashIcon = () => (
 );
 
 const CategoryPage = () => {
+  const [activeTab, setActiveTab] = useState("CATEGORY"); // THÊM MỚI: Quản lý Tab
   const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]); // THÊM MỚI: Lưu danh sách hãng
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
   const canManage = ApiService.isAdminOrManager();
 
+  // THÊM MỚI: State cho Modal Hãng
+  const [showBrandModal, setShowBrandModal] = useState(false);
+  const [editingBrandId, setEditingBrandId] = useState(null);
+  const [brandForm, setBrandForm] = useState({ name: "", description: "" });
+
   useEffect(() => {
-    const getCategories = async () => {
-      try {
-        const response = await ApiService.getAllCategory();
-        if (response.status === 200) {
-          setCategories(response.categories);
-        }
-      } catch (error) {
-        showMessage(error.response?.data?.message || "Lỗi khi tải danh mục: " + error);
-      }
-    };
-    getCategories();
+    fetchCategories();
+    fetchBrands(); // THÊM MỚI: Gọi API lấy hãng
   }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await ApiService.getAllCategory();
+      if (response.status === 200) setCategories(response.categories || []);
+    } catch (error) {
+      showMessage(error.response?.data?.message || "Lỗi khi tải danh mục");
+    }
+  };
+
+  const fetchBrands = async () => {
+    try {
+      const response = await ApiService.getAllBrands();
+      if (response.status === 200) setBrands(response.brands || []);
+    } catch (error) {
+      showMessage(error.response?.data?.message || "Lỗi khi tải hãng");
+    }
+  };
+
+  // --- THÊM MỚI TOÀN BỘ CÁC HÀM XỬ LÝ HÃNG ---
+  const openBrandModal = (brand = null) => {
+    if (brand) {
+      setEditingBrandId(brand.id);
+      setBrandForm({ name: brand.name, description: brand.description || "" });
+    } else {
+      setEditingBrandId(null);
+      setBrandForm({ name: "", description: "" });
+    }
+    setShowBrandModal(true);
+  };
+
+  const handleSaveBrand = async (e) => {
+    e.preventDefault();
+    if (!brandForm.name.trim()) return showMessage("Tên hãng không được để trống!");
+    try {
+      if (editingBrandId) {
+        await ApiService.updateBrand(editingBrandId, brandForm);
+        showMessage("Cập nhật hãng thành công!");
+      } else {
+        await ApiService.createBrand(brandForm);
+        showMessage("Thêm hãng mới thành công!");
+      }
+      setShowBrandModal(false);
+      fetchBrands();
+    } catch (error) {
+      showMessage(error.response?.data?.message || "Lỗi khi lưu hãng");
+    }
+  };
+
+  const deleteBrand = async (brandId) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa hãng này không?")) {
+      try {
+        await ApiService.deleteBrand(brandId);
+        showMessage("Đã xóa hãng thành công");
+        fetchBrands();
+      } catch (error) {
+        showMessage(error.response?.data?.message || "Lỗi khi xóa hãng");
+      }
+    }
+  };
 
   const deleteCategory = async (categoryId) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa danh mục này không?")) {
@@ -97,61 +155,93 @@ const CategoryPage = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            {canManage && (
-              <button 
-                onClick={() => navigate("/category/add")}
-                className="px-5 py-2.5 bg-[#008080] hover:bg-teal-700 text-white font-bold rounded-xl shadow-md text-sm transition-all active:scale-95 cursor-pointer flex items-center gap-2"
-              >
+            {canManage && activeTab === "CATEGORY" && (
+              <button onClick={() => navigate("/category/add")} className="px-5 py-2.5 bg-[#008080] hover:bg-teal-700 text-white font-bold rounded-xl shadow-md text-sm transition-all active:scale-95 cursor-pointer flex items-center gap-2">
                 ➕ Thêm danh mục mới
               </button>
             )}
-            {categories && (
-              <div className="flex items-center gap-2.5 bg-white px-5 py-2.5 rounded-xl border border-slate-200 shadow-sm">
-                <span className="text-slate-600 font-bold text-sm">Tổng: <span className="text-[#008080]">{categories.length}</span></span>
-              </div>
+            {canManage && activeTab === "BRAND" && (
+              <button onClick={() => openBrandModal()} className="px-5 py-2.5 bg-[#008080] hover:bg-teal-700 text-white font-bold rounded-xl shadow-md text-sm transition-all active:scale-95 cursor-pointer flex items-center gap-2">
+                ➕ Thêm hãng mới
+              </button>
             )}
           </div>
         </div>
 
         {message && <div className="bg-emerald-50 text-emerald-600 p-3.5 rounded-xl text-center mb-6 text-sm border border-emerald-200 font-semibold shadow-sm animate-fadeIn">{message}</div>}
 
-        <div className="bg-white rounded-2xl shadow border border-slate-100 overflow-hidden">
-          <div className="divide-y divide-slate-100">
-            {categories.map((category) => (
-              <div className="flex justify-between items-center p-5 bg-white hover:bg-slate-50/40 transition-colors group" key={category.id}>
-                <div className="flex items-center gap-4">
-                  <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
-                    <TagIcon />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-semibold text-slate-700 tracking-wide">{category.name}</span>
-                    {renderSpecsPreview(category.requiredSpecs)}
-                  </div>
-                </div>
-
-                {canManage && (
-                  <div className="flex items-center gap-1">
-                    {/* SỬA ĐƯỜNG DẪN TẠI ĐÂY: Từ /categories/edit thành /category/edit */}
-                    <button 
-                      className="p-2 text-teal-600 hover:bg-teal-50 border border-transparent hover:border-teal-100 rounded-xl transition-all cursor-pointer" 
-                      onClick={() => navigate(`/category/edit/${category.id}`)}
-                      title="Chỉnh sửa cấu hình nhóm"
-                    >
-                      <EditIcon />
-                    </button>
-                    <button 
-                      className="p-2 text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 rounded-xl transition-all cursor-pointer" 
-                      onClick={() => deleteCategory(category.id)}
-                      title="Xóa danh mục"
-                    >
-                      <TrashIcon />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+        {/* --- KHU VỰC ĐIỀU HƯỚNG TAB --- */}
+        <div className="flex gap-2 mb-6 border-b border-slate-200 pb-px">
+            <button onClick={() => setActiveTab("CATEGORY")} className={`px-6 py-3 font-bold text-sm rounded-t-xl transition-colors border-b-2 ${activeTab === "CATEGORY" ? "bg-white text-[#008080] border-[#008080]" : "bg-transparent text-slate-500 border-transparent hover:bg-slate-100"}`}>
+                Danh mục thiết bị ({categories.length})
+            </button>
+            <button onClick={() => setActiveTab("BRAND")} className={`px-6 py-3 font-bold text-sm rounded-t-xl transition-colors border-b-2 ${activeTab === "BRAND" ? "bg-white text-[#008080] border-[#008080]" : "bg-transparent text-slate-500 border-transparent hover:bg-slate-100"}`}>
+                Hãng sản xuất ({brands.length})
+            </button>
         </div>
+
+        {/* --- NỘI DUNG TAB DANH MỤC --- */}
+        {activeTab === "CATEGORY" && (
+            <div className="bg-white rounded-2xl shadow border border-slate-100 overflow-hidden">
+              <div className="divide-y divide-slate-100">
+                  {categories.map((category) => (
+                    <div className="flex justify-between items-center p-5 bg-white hover:bg-slate-50/40" key={category.id}>
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm font-semibold text-slate-700 tracking-wide">{category.name}</span>
+                        </div>
+                        {canManage && (
+                          <div className="flex items-center gap-1">
+                              <button className="p-2 text-teal-600" onClick={() => navigate(`/category/edit/${category.id}`)}><EditIcon /></button>
+                              <button className="p-2 text-red-600" onClick={() => deleteCategory(category.id)}><TrashIcon /></button>
+                          </div>
+                        )}
+                    </div>
+                  ))}
+              </div>
+            </div>
+        )}
+
+        {/* --- NỘI DUNG TAB HÃNG SẢN XUẤT --- */}
+        {activeTab === "BRAND" && (
+            <div className="bg-white rounded-2xl shadow border border-slate-100 overflow-hidden">
+              <div className="divide-y divide-slate-100">
+                  {brands.map((brand) => (
+                    <div className="flex justify-between items-center p-5 bg-white hover:bg-slate-50/40" key={brand.id}>
+                        <div className="flex flex-col">
+                            <span className="text-sm font-semibold text-slate-700 tracking-wide">{brand.name}</span>
+                            {brand.description && <span className="text-xs text-slate-400 mt-0.5">{brand.description}</span>}
+                        </div>
+                        {canManage && (
+                          <div className="flex items-center gap-1">
+                              <button className="p-2 text-orange-600" onClick={() => openBrandModal(brand)}><EditIcon /></button>
+                              <button className="p-2 text-red-600" onClick={() => deleteBrand(brand.id)}><TrashIcon /></button>
+                          </div>
+                        )}
+                    </div>
+                  ))}
+              </div>
+            </div>
+        )}
+
+        {/* --- MODAL (POPUP) THÊM / SỬA HÃNG SẢN XUẤT --- */}
+        {showBrandModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 className="font-black text-slate-700 text-lg">{editingBrandId ? "Sửa Hãng" : "Thêm Hãng"}</h3>
+                <button onClick={() => setShowBrandModal(false)} className="text-slate-400 hover:text-red-500 font-bold">&times;</button>
+              </div>
+              <form onSubmit={handleSaveBrand} className="p-6 flex flex-col gap-4">
+                <input type="text" required className="w-full p-3 border rounded-xl" placeholder="Tên hãng..." value={brandForm.name} onChange={(e) => setBrandForm({...brandForm, name: e.target.value})} />
+                <textarea className="w-full p-3 border rounded-xl" rows={3} placeholder="Mô tả..." value={brandForm.description} onChange={(e) => setBrandForm({...brandForm, description: e.target.value})} />
+                <div className="flex gap-3 mt-4">
+                  <button type="button" onClick={() => setShowBrandModal(false)} className="flex-1 p-3 rounded-xl bg-slate-100">Hủy</button>
+                  <button type="submit" className="flex-1 p-3 rounded-xl text-white bg-[#008080]">Lưu</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );

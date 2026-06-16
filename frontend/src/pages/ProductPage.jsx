@@ -28,7 +28,7 @@ const ProductPage = () => {
   const navigate = useNavigate();
   const canManage = ApiService.isAdminOrManager();
 
-  const brands = ["Apple", "Samsung", "Xiaomi", "Lenovo", "Acer", "Asus"];
+  const [brands, setBrands] = useState([]);
 
   const priceOptions = [
     { value: "1m_to_5m", label: "1.000.000đ - 5.000.000đ" },
@@ -63,6 +63,11 @@ const ProductPage = () => {
       try {
         const catData = await ApiService.getAllCategory();
         setCategories(catData?.categories || []);
+      } catch (_) {}
+
+      try {
+        const brandData = await ApiService.getAllBrands();
+        setBrands(brandData?.brands || []);
       } catch (_) {}
 
       try {
@@ -101,11 +106,10 @@ const ProductPage = () => {
 
     if (selectedBrand && selectedBrand !== "") {
       result = result.filter(p => {
-        const hasMatchingSpecBrand = p.specs && p.specs.some(s => 
-          (s.specKey === "Hãng" || s.specKey === "Hãng sản xuất") && 
-          s.specValue && s.specValue.toLowerCase() === selectedBrand.toLowerCase()
-        );
-        return hasMatchingSpecBrand || (p.name && p.name.toLowerCase().includes(selectedBrand.toLowerCase()));
+        // THAY ĐỔI: Lọc dựa trên brandId thay vì dò tìm trong thông số kỹ thuật
+        const bId = p.brandId ? p.brandId : (p.brand ? p.brand.id : null);
+        if (!bId) return false;
+        return bId.toString() === selectedBrand.toString();
       });
     }
 
@@ -316,7 +320,7 @@ const ProductPage = () => {
               >
                 <option value="">-- Tất cả các hãng --</option>
                 {brands.map(b => (
-                  <option key={b} value={b}>{b}</option>
+                  <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
               </select>
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs">▼</span>

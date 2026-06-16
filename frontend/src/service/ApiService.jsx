@@ -237,6 +237,36 @@ export default class ApiService {
         return response.data;
     }
 
+    /** BRAND ENDPOINTS */
+    
+    static async createBrand(brandData) {
+        const response = await axios.post(`${this.BASE_URL}/brands/add`, brandData, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    static async getAllBrands() {
+        const response = await axios.get(`${this.BASE_URL}/brands/all`, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    static async updateBrand(brandId, brandData) {
+        const response = await axios.put(`${this.BASE_URL}/brands/update/${brandId}`, brandData, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    static async deleteBrand(brandId) {
+        const response = await axios.delete(`${this.BASE_URL}/brands/delete/${brandId}`, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
     /** SUPPLIER ENDPOINTS */
 
     static async addSupplier(supplierData) {

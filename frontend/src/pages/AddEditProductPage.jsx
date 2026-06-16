@@ -3,13 +3,6 @@ import Layout from "../component/Layout";
 import ApiService from "../service/ApiService";
 import { useNavigate, useParams } from "react-router-dom";
 
-// 🌟 BỔ SUNG 1: Danh sách các Hãng sản xuất (Bạn có thể thêm/bớt tùy ý)
-const BRANDS = [
-  "Dell", "HP", "Lenovo", "Asus", "Acer", 
-  "Apple", "Xiaomi", "Gigabyte", "Samsung", "LG", 
-  "Sony", "Logitech", "Khác"
-];
-
 const LOCATIONS = [];
 for (let tang = 1; tang <= 3; tang++) {
   LOCATIONS.push(`Kệ 1 - Tầng ${tang}`);
@@ -34,19 +27,29 @@ const AddEditProductPage = () => {
   const [warrantyMonths, setWarrantyMonths] = useState(12);
   const [minStockLevel, setMinStockLevel] = useState(5);
 
-  const [brand, setBrand] = useState("");
+  const [brands, setBrands] = useState([]); 
+  const [brandId, setBrandId] = useState("");
+  const [suppliers, setSuppliers] = useState([]);
+  const [supplierId, setSupplierId] = useState("");
   const [location, setLocation] = useState("");
   const [specValues, setSpecValues] = useState({});
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchData = async () => {
       try {
         const categoriesData = await ApiService.getAllCategory();
         setCategories(categoriesData.categories || []);
+
+        const brandsData = await ApiService.getAllBrands();
+        setBrands(brandsData.brands || []);
+        
+        const suppliersData = await ApiService.getAllSuppliers();
+        setSuppliers(suppliersData.suppliers || []);
+
       } catch (error) {
-        showMessage("Lỗi khi tải danh sách danh mục: " + error);
+        showMessage("Lỗi khi tải dữ liệu cấu hình: " + error);
       }
     };
 
@@ -67,13 +70,13 @@ const AddEditProductPage = () => {
             setWarrantyMonths(p.warrantyMonths || 12);
             setMinStockLevel(p.minStockLevel || 5);
             setLocation(p.location || "");
+            setBrandId(p.brandId || ""); 
+            setSupplierId(p.supplierId || "");
             
             if (p.specs) {
               const loadedSpecs = {};
               p.specs.forEach(s => {
-                if (s.specKey === "Hãng" || s.specKey === "Hãng sản xuất") {
-                  setBrand(s.specValue || "");
-                } else {
+                if (s.specKey !== "Hãng" && s.specKey !== "Hãng sản xuất") {
                   loadedSpecs[s.specKey] = s.specValue || "";
                 }
               });
@@ -86,7 +89,7 @@ const AddEditProductPage = () => {
       }
     };
 
-    fetchCategories();
+    fetchData();
     if (productId) fetchProductById();
   }, [productId]);
 
@@ -128,18 +131,13 @@ const AddEditProductPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!name || !name.trim() || !sku || !sku.trim() || !price || !categoryId || !brand || !brand.trim() || !location || !location.trim() || (!isEditing && !imageFile)) {
+    if (!name || !name.trim() || !sku || !sku.trim() || !price || !categoryId || !brandId || !supplierId || !location || !location.trim() || (!isEditing && !imageFile)) {
       setMessage("⚠️ Vui lòng điền đầy đủ thông tin bắt buộc và tải lên hình ảnh thiết bị khi thêm mới!");
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
     const formattedSpecs = [];
-    formattedSpecs.push({
-      groupName: "Thông tin chung",
-      specKey: "Hãng",
-      specValue: brand.trim()
-    });
 
     if (parsedTemplateGroups && parsedTemplateGroups.length > 0) {
       parsedTemplateGroups.forEach(group => {
@@ -172,6 +170,8 @@ const AddEditProductPage = () => {
       price: parseFloat(price),
       stockQuantity: isEditing ? parseInt(stockQuantity) : 0, 
       categoryId: parseInt(categoryId),
+      brandId: parseInt(brandId),
+      supplierId: parseInt(supplierId),
       description: description ? description.trim() : "",
       location: location.trim(),
       warrantyMonths: parseInt(warrantyMonths) || 12,
@@ -214,29 +214,35 @@ const AddEditProductPage = () => {
           </div>
 
           <div className="flex flex-col">
+            <label className="text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Nhà cung cấp *</label>
+            <select className="p-2.5 border border-slate-200 rounded-lg focus:border-[#008080] outline-none bg-white cursor-pointer font-medium text-slate-700" value={supplierId} onChange={(e) => setSupplierId(e.target.value)} required>
+              <option value="">Chọn nhà cung cấp</option>
+              {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+
+          <div className="flex flex-col">
             <label className="text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Tên sản phẩm *</label>
             <input className="p-2.5 border border-slate-200 rounded-lg focus:border-[#008080] outline-none font-medium text-slate-800" type="text" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             
-            {/* 🌟 THAY ĐỔI: Chuyển input Hãng thành select dropdown */}
             <div className="flex flex-col">
               <label className="text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Hãng *</label>
               <select 
                 className="p-2.5 border border-[#008080] rounded-lg focus:border-[#008080] font-bold text-[#008080] bg-teal-50/10 outline-none cursor-pointer" 
-                value={brand} 
-                onChange={(e) => setBrand(e.target.value)} 
+                value={brandId} 
+                onChange={(e) => setBrandId(e.target.value)} 
                 required
               >
                 <option value="">-- Chọn Hãng --</option>
-                {BRANDS.map((b, idx) => (
-                  <option key={idx} value={b}>{b}</option>
+                {brands.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
               </select>
             </div>
 
-            {/* 🌟 THAY ĐỔI: Chuyển input Vị trí thành select dropdown */}
             <div className="flex flex-col">
               <label className="text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Vị trí kho hàng *</label>
               <select 
