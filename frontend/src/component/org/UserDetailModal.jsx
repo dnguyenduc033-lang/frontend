@@ -57,16 +57,26 @@ const UserDetailModal = ({ user, loading, onClose, onSuccess, onDeleteSuccess })
 
     setSaving(true);
     try {
-      const response = await ApiService.updateUser(user.id, {
-        id: user.id,
-        password: newPassword,
-      });
+      let response;
+      // Nếu là Quản trị viên đang xem tài khoản người khác -> Gọi API cấp lại mật khẩu
+      if (currentUserRole === "ADMIN" && !isViewingOwnProfile) {
+        response = await ApiService.resetPasswordByAdmin(user.id, newPassword);
+      } else {
+        // Tự đổi mật khẩu (không cần mật khẩu cũ ở Modal này)
+        response = await ApiService.updateUser(user.id, {
+          id: user.id,
+          password: newPassword,
+        });
+      }
+      
       if (response.status === 200) {
-        onSuccess(`Đổi mật khẩu tài khoản ${user.name} thành công!`);
+        onSuccess(currentUserRole === "ADMIN" && !isViewingOwnProfile 
+          ? `Cấp lại mật khẩu cho ${user.name} thành công!` 
+          : `Đổi mật khẩu thành công!`);
         onClose();
       }
     } catch (error) {
-      alert(error.response?.data?.message || "Có lỗi xảy ra khi đổi mật khẩu.");
+      alert(error.response?.data?.message || "có lỗi xảy ra khi đổi mật khẩu.");
     } finally {
       setSaving(false);
     }
@@ -154,8 +164,8 @@ const UserDetailModal = ({ user, loading, onClose, onSuccess, onDeleteSuccess })
               </button>
             )}
 
-            {/* Nút Đổi mật khẩu — chỉ hiện khi xem profile của chính mình */}
-            {isViewingOwnProfile && (
+            {/* Nút Đổi mật khẩu / Cấp lại mật khẩu */}
+            {(isViewingOwnProfile || currentUserRole === "ADMIN") && (
               <>
                 {!isEditingPassword ? (
                   <button
@@ -163,15 +173,15 @@ const UserDetailModal = ({ user, loading, onClose, onSuccess, onDeleteSuccess })
                     onClick={() => setIsEditingPassword(true)}
                     className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 transition-colors cursor-pointer"
                   >
-                    <Pencil size={16} />
-                    Đổi mật khẩu
+                    {currentUserRole === "ADMIN" && !isViewingOwnProfile ? <Lock size={16} /> : <Pencil size={16} />}
+                    {currentUserRole === "ADMIN" && !isViewingOwnProfile ? "Cấp lại mật khẩu" : "Đổi mật khẩu"}
                   </button>
                 ) : (
-                  <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+                  <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl mt-2">
                     <Lock size={18} className="text-amber-500 shrink-0" />
                     <input
                       type="password"
-                      placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"
+                      placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
                       className="flex-1 px-3 py-2 bg-white border border-amber-200 rounded-lg outline-none text-sm font-medium focus:border-amber-500"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}

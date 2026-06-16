@@ -7,8 +7,8 @@ const ProfilePage = () => {
   const [profile, setProfile] = useState(null);
   const [message, setMessage] = useState("");
 
-  // 🌟 CÁC STATE: Phục vụ tính năng chỉnh sửa mật khẩu tại chỗ
   const [isEditingPassword, setIsEditingPassword] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
@@ -32,18 +32,21 @@ const ProfilePage = () => {
       return;
     }
 
-    try {
-      // Đóng gói dữ liệu bảo mật: Chỉ truyền ID và Mật khẩu mới theo đúng quy chuẩn
-      const userDTO = {
-        id: profile.id,
-        password: newPassword
-      };
+    // NẾU KHÔNG PHẢI ADMIN: Bắt buộc kiểm tra xem đã nhập mật khẩu cũ chưa
+    if (profile.role !== "ADMIN" && (!oldPassword || oldPassword.trim() === "")) {
+      alert("Vui lòng nhập mật khẩu hiện tại của bạn!");
+      return;
+    }
 
-      const response = await ApiService.updateUser(profile.id, userDTO);
+    try {
+      // GỌI API CHANGE-OWN-PASSWORD TỪ APISERVICE
+      const response = await ApiService.changeOwnPassword(profile.id, oldPassword, newPassword);
+      
       if (response.status === 200) {
         showMessage("Thay đổi mật khẩu cá nhân thành công!");
         setIsEditingPassword(false);
-        setNewPassword("");
+        setOldPassword(""); // Dọn sạch input
+        setNewPassword(""); // Dọn sạch input
       }
     } catch (error) {
       alert(error.response?.data?.message || "Có lỗi xảy ra khi đổi mật khẩu.");
@@ -178,15 +181,36 @@ const ProfilePage = () => {
                 </div>
               </div>
 
-              {/* 🌟 Ô NHẬP MẬT KHẨU MỚI: Tự động trượt xuất hiện khi kích hoạt trạng thái sửa */}
+              {/* 🌟 KHUNG ĐỔI MẬT KHẨU HOÀN THIỆN */}
               {isEditingPassword && (
-                <div className="flex items-center gap-4 p-4 bg-amber-50/60 border border-amber-200 rounded-2xl animate-fadeIn">
-                  <div className="w-10 h-10 bg-white shadow-sm text-amber-500 rounded-xl flex items-center justify-center shrink-0 border border-amber-100">
-                    <Lock size={18} strokeWidth={2.5} />
-                  </div>
-                  <div className="w-full flex gap-2 items-end">
+                <div className="flex flex-col gap-3 p-4 bg-amber-50/60 border border-amber-200 rounded-2xl animate-fadeIn">
+                  
+                  {/* CHỈ MANAGER VÀ STAFF (KHÔNG PHẢI ADMIN) MỚI THẤY Ô MẬT KHẨU CŨ NÀY */}
+                  {profile.role !== "ADMIN" && (
+                    <div className="flex items-center gap-3 border-b border-amber-100 pb-3">
+                      <div className="w-8 h-8 bg-white shadow-sm text-amber-500 rounded-lg flex items-center justify-center shrink-0 border border-amber-100">
+                        <Lock size={14} strokeWidth={2.5} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-1">Mật khẩu hiện tại *</p>
+                        <input 
+                          type="password" 
+                          placeholder="Nhập mật khẩu cũ..." 
+                          className="w-full px-3 py-1.5 bg-white border border-amber-200 rounded-lg outline-none text-xs font-bold text-slate-700 focus:border-amber-500 transition-colors"
+                          value={oldPassword}
+                          onChange={(e) => setOldPassword(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Ô nhập mật khẩu mới */}
+                  <div className="flex items-end gap-3">
+                    <div className="w-8 h-8 bg-white shadow-sm text-amber-500 rounded-lg flex items-center justify-center shrink-0 border border-amber-100">
+                      <ShieldCheck size={14} strokeWidth={2.5} />
+                    </div>
                     <div className="flex-1">
-                      <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-1">Nhập mật khẩu mới</p>
+                      <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-1">Mật khẩu mới</p>
                       <input 
                         type="password" 
                         placeholder="Tối thiểu 6 ký tự..." 
@@ -195,10 +219,9 @@ const ProfilePage = () => {
                         onChange={(e) => setNewPassword(e.target.value)}
                       />
                     </div>
-                    {/* Nút lưu nhanh tích xanh */}
                     <button 
                       onClick={handleSavePassword}
-                      className="p-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors cursor-pointer shadow-sm flex items-center justify-center"
+                      className="h-[30px] px-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors cursor-pointer shadow-sm flex items-center justify-center shrink-0"
                       title="Lưu thay đổi"
                     >
                       <Check size={16} strokeWidth={3} />
@@ -214,7 +237,8 @@ const ProfilePage = () => {
                 type="button"
                 onClick={() => {
                   setIsEditingPassword(!isEditingPassword);
-                  setNewPassword(""); // Dọn sạch text-box khi bấm đóng mở
+                  setOldPassword("");
+                  setNewPassword("");
                 }}
                 className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all shadow-sm hover:shadow-md cursor-pointer border ${
                   isEditingPassword 

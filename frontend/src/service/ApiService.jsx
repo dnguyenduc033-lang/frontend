@@ -123,6 +123,23 @@ export default class ApiService {
         return response.data;
     }
 
+    static async resetPasswordByAdmin(userId, newPassword) {
+        const response = await axios.put(`${this.BASE_URL}/users/reset-password/${userId}`, { password: newPassword }, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
+    static async changeOwnPassword(userId, oldPassword, newPassword) {
+        const response = await axios.put(`${this.BASE_URL}/users/change-password/${userId}`, {
+            oldPassword: oldPassword,
+            newPassword: newPassword
+        }, {
+            headers: this.getHeader()
+        });
+        return response.data;
+    }
+
     static async deleteUser(userId) {
         const response = await axios.delete(`${this.BASE_URL}/users/delete/${userId}`, {
             headers: this.getHeader()
@@ -238,7 +255,7 @@ export default class ApiService {
     }
 
     /** BRAND ENDPOINTS */
-    
+
     static async createBrand(brandData) {
         const response = await axios.post(`${this.BASE_URL}/brands/add`, brandData, {
             headers: this.getHeader()
